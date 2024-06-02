@@ -32,13 +32,13 @@ pipeline {
         {
             steps
             {
-                sh 'docker build -t yokendrakumar/devopstask:v1'
+                sh 'docker build -t devops:v1'
             }
         }
         stage('create docker containers')
         {
             steps{
-                sh' docker run -d --name devopstask -p 80:80 yokendrakumar/devopstask:v1'
+                sh' docker run -d --name devops -p 80:80 devops:v1'
             }
         }
    
