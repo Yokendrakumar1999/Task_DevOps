@@ -1,0 +1,47 @@
+pipeline {
+
+    agent any
+    stages{
+        
+    stage('deploy')
+    {
+            steps
+            {
+                sh 'cp -r * /var/www/html/'
+            }
+        }
+
+
+        stage('deleting Containers')
+        {
+            steps
+            {
+                sh 'docker rm $(docker ps -aq)'
+            }
+        }
+   
+     stage('deleting images')
+        {
+            steps
+            {
+                sh 'docker rmi $(docker images -aq)'
+            }
+        }
+          
+          stage('create docker images')
+        {
+            steps
+            {
+                sh 'docker build -t yokendrakumar/devopstask:v1'
+            }
+        }
+        stage('create docker containers')
+        {
+            steps{
+                sh' docker run -d --name devopstask -p 80:80 yokendrakumar/devopstask:v1'
+            }
+        }
+   
+   
+    }
+}
