@@ -1,39 +1,52 @@
 pipeline {
     agent any
+
+    environment {
+        ECR_REPO_URI = '784390659805.dkr.ecr.us-east-1.amazonaws.com/devops'
+        DOCKER_IMAGE = 'devops'
+        AWS_REGION = 'us-east-1'
+    }
+
     stages {
-        stage('Clone Repository') {
+        stage('Checkout') {
             steps {
-                git 'https://github.com/Yokendrakumar1999/Task_DevOps.git'
+                git branch: 'master', url: 'https://github.com/Yokendrakumar1999/Task_DevOps.git'
             }
         }
+        
         stage('Install Dependencies') {
             steps {
-                sh 'apt update && apt install -y apache2 php libapache2-mod-php php-mysql mysql-client-core-8.0'
+                sh 'composer install'
             }
         }
-        stage('Deploy to /var/www/html') {
-            steps {
-                sh 'cp -r * /var/www/html/'
-            }
-        }
-        stage('Delete Containers') {
-            steps {
-                sh 'docker rm $(docker ps -aq) || true'
-            }
-        }
-        stage('Delete Images') {
-            steps {
-                sh 'docker rmi $(docker images -aq) || true'
-            }
-        }
+        
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t devops:v1 .'
+                script {
+                    dockerImage = docker.build("${ECR_REPO_URI}:${env.BUILD_NUMBER}")
+                }
             }
         }
-        stage('Create Docker Containers') {
+        
+        stage('Push to ECR') {
             steps {
-                sh 'docker run -d --name devops -p 80:80 devops:v1'
+                script {
+                    withAWS(region: "${AWS_REGION}", credentials: 'aws-credentials') {
+                        sh """
+                        $(aws ecr get-login --no-include-email --region ${AWS_REGION})
+                        docker push ${ECR_REPO_URI}:${env.BUILD_NUMBER}
+                        """
+                    }
+                }
+            }
+        }
+        
+        stage('Deploy to EC2') {
+            steps {
+                script {
+                    sh 'scp -i /path/to/devops.pem scripts/deploy.sh ubuntu@204.236.252.173:/home/ubuntu/'
+                    sh 'ssh -i /path/to/devops.pem ubuntu@204.236.252.173 "sh /home/ubuntu/deploy.sh ${ECR_REPO_URI}:${env.BUILD_NUMBER}"'
+                }
             }
         }
     }
