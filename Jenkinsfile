@@ -3,34 +3,9 @@ pipeline {
     environment {
         AWS_ACCOUNT_ID = "784390659805"
         AWS_DEFAULT_REGION = "us-east-1"
-        IMAGE_REPO_NAME = "devops"
+        IMAGE_REPO_NAME = "devops1"
         IMAGE_TAG = "latest"
-        REPOSITORY_URI = "784390659805.dkr.ecr.us-east-1.amazonaws.com/devops"
-    }
-   
-    stages {
-        stage('Logging into AWS ECR') {
-            steps {
-                script {
-                    sh """
-                    aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ${REPOSITORY_URI}
-                    """
-                }
-            }
-        }
-        
-        stage('Cloning Git') {
-            steps {
-                checkout([$class: 'GitSCM', 
-                          branches: [[name: '*/maste…
-[5:02 pm, 03/06/2024] Yogi...: pipeline {
-    agent any
-    environment {
-        AWS_ACCOUNT_ID = "784390659805"
-        AWS_DEFAULT_REGION = "us-east-1"
-        IMAGE_REPO_NAME = "devops"
-        IMAGE_TAG = "latest"
-        REPOSITORY_URI = "784390659805.dkr.ecr.us-east-1.amazonaws.com/devops"
+        REPOSITORY_URI = "784390659805.dkr.ecr.us-east-1.amazonaws.com/devops1"
     }
    
     stages {
