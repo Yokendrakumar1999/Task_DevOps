@@ -1,51 +1,76 @@
-pipeline {
+[4:59 pm, 03/06/2024] Yogi...: pipeline {
     agent any
-
     environment {
-        ECR_REPO_URI = '784390659805.dkr.ecr.us-east-1.amazonaws.com/devops'
-        DOCKER_IMAGE = 'devops'
-        AWS_REGION = 'us-east-1'
+        AWS_ACCOUNT_ID = "784390659805"
+        AWS_DEFAULT_REGION = "us-east-1"
+        IMAGE_REPO_NAME = "devops"
+        IMAGE_TAG = "latest"
+        REPOSITORY_URI = "784390659805.dkr.ecr.us-east-1.amazonaws.com/devops"
     }
-
+   
     stages {
-        stage('Checkout') {
-            steps {
-                git branch: 'master', url: 'https://github.com/Yokendrakumar1999/Task_DevOps.git'
-            }
-        }
-        
-        stage('Install Dependencies') {
-            steps {
-                sh 'composer install'
-            }
-        }
-        
-        stage('Build Docker Image') {
+        stage('Logging into AWS ECR') {
             steps {
                 script {
-                    dockerImage = docker.build("${ECR_REPO_URI}:${env.BUILD_NUMBER}")
+                    sh """
+                    aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ${REPOSITORY_URI}
+                    """
                 }
             }
         }
         
-        stage('Push to ECR') {
+        stage('Cloning Git') {
+            steps {
+                checkout([$class: 'GitSCM', 
+                          branches: [[name: '*/maste…
+[5:02 pm, 03/06/2024] Yogi...: pipeline {
+    agent any
+    environment {
+        AWS_ACCOUNT_ID = "784390659805"
+        AWS_DEFAULT_REGION = "us-east-1"
+        IMAGE_REPO_NAME = "devops"
+        IMAGE_TAG = "latest"
+        REPOSITORY_URI = "784390659805.dkr.ecr.us-east-1.amazonaws.com/devops"
+    }
+   
+    stages {
+        stage('Logging into AWS ECR') {
             steps {
                 script {
-                    withAWS(region: "${AWS_REGION}", credentials: 'aws-credentials') {
-                        sh """
-                        $(aws ecr get-login --no-include-email --region ${AWS_REGION})
-                        docker push ${ECR_REPO_URI}:${env.BUILD_NUMBER}
-                        """
-                    }
+                    sh """
+                    aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ${REPOSITORY_URI}
+                    """
                 }
             }
         }
         
-        stage('Deploy to EC2') {
+        stage('Cloning Git') {
+            steps {
+                checkout([$class: 'GitSCM', 
+                          branches: [[name: '*/master']], 
+                          doGenerateSubmoduleConfigurations: false, 
+                          extensions: [], 
+                          submoduleCfg: [], 
+                          userRemoteConfigs: [[credentialsId: 'your-credentials-id', 
+                                               url: 'https://github.com/Yokendrakumar1999/Task_DevOps.git']]])     
+            }
+        }
+  
+        stage('Building image') {
             steps {
                 script {
-                    sh 'scp -i /path/to/devops.pem scripts/deploy.sh ubuntu@204.236.252.173:/home/ubuntu/'
-                    sh 'ssh -i /path/to/devops.pem ubuntu@204.236.252.173 "sh /home/ubuntu/deploy.sh ${ECR_REPO_URI}:${env.BUILD_NUMBER}"'
+                    dockerImage = docker.build("${IMAGE_REPO_NAME}:${IMAGE_TAG}", ".")
+                }
+            }
+        }
+   
+        stage('Pushing to ECR') {
+            steps {
+                script {
+                    sh """
+                    docker tag ${IMAGE_REPO_NAME}:${IMAGE_TAG} ${REPOSITORY_URI}:${IMAGE_TAG}
+                    docker push ${REPOSITORY_URI}:${IMAGE_TAG}
+                    """
                 }
             }
         }
