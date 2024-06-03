@@ -1,4 +1,4 @@
-[4:59 pm, 03/06/2024] Yogi...: pipeline {
+pipeline {
     agent any
     environment {
         AWS_ACCOUNT_ID = "784390659805"
